@@ -3,30 +3,43 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { sequelize, connectDB } = require("./config/db");
 
-// Configuración de variables de entorno (debe ir al inicio)
 dotenv.config();
 
-// Conectar a la base de datos con manejo de errores
 const startServer = async () => {
   try {
     await connectDB();
     console.log("✅ Database connected successfully");
 
-    // Importar asociaciones entre modelos antes de sincronizar
     require("./models/associations");
 
-    // Sincronizar base de datos (Solo usar alter: true en desarrollo)
     await sequelize.sync({ alter: true });
     console.log("✅ Database synchronized");
 
-    // Crear instancia de Express
     const app = express();
 
-    // Habilitar CORS y parseo de JSON
-    app.use(cors());
+    const allowedOrigins = [
+      "https://globalcontrol-system.com",
+      "http://localhost:3000",
+    ];
+
+    app.use(
+      cors({
+        origin: function (origin, callback) {
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error("CORS no permitido"));
+          }
+        },
+        credentials: true,
+        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+        allowedHeaders:
+          "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+      })
+    );
+
     app.use(express.json());
 
-    // Importar rutas
     const clientRoutes = require("./routes/clientRoutes");
     const shipmentRoutes = require("./routes/shipmentRoutes");
     const batchRoutes = require("./routes/batchRoutes");
@@ -35,7 +48,6 @@ const startServer = async () => {
     const receiverRoutes = require("./routes/receiverRoutes");
     const emailRoutes = require("./routes/emailRoutes");
 
-    // Usar rutas
     app.use("/api/clients", clientRoutes);
     app.use("/api/shipments", shipmentRoutes);
     app.use("/api/batches", batchRoutes);
@@ -49,9 +61,8 @@ const startServer = async () => {
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (error) {
     console.error("❌ Error initializing server:", error.message);
-    process.exit(1); // Sale del proceso si hay un error
+    process.exit(1);
   }
 };
 
-// Ejecutar la función de inicio
 startServer();
