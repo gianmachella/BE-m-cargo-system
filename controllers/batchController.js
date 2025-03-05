@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 const Batch = require("../models/Batch");
 const { sequelize } = require("../config/db");
-const Shipment = require("../models/Shipment"); // ✅ Importar modelo Shipment
+const Shipment = require("../models/Shipment");
 
 const getBatches = async (req, res) => {
   const { page = 1, limit = 10, search = "" } = req.query;
@@ -9,7 +9,6 @@ const getBatches = async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    // Condición para filtrar por número de lote, país de destino o tipo de envío
     const whereCondition = search
       ? {
           [Op.or]: [
@@ -39,7 +38,6 @@ const getBatches = async (req, res) => {
   }
 };
 
-// Crear un nuevo lote
 const createBatch = async (req, res) => {
   try {
     const newBatch = await Batch.create(req.body);
@@ -49,7 +47,6 @@ const createBatch = async (req, res) => {
   }
 };
 
-// Obtener un lote por su ID
 const getBatchById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,17 +63,17 @@ const getBatchById = async (req, res) => {
 };
 
 const updateBatch = async (req, res) => {
-  const transaction = await sequelize.transaction(); // ✅ Iniciar transacción
+  const transaction = await sequelize.transaction();
 
   try {
     const { id } = req.params;
-    const { status } = req.body; // Extraer el nuevo estado del lote
+    const { status } = req.body;
 
     const batch = await Batch.findByPk(id, {
       include: [
         {
           model: Shipment,
-          as: "batchShipments", // ✅ Alias correcto
+          as: "batchShipments",
         },
       ],
       transaction,
@@ -86,13 +83,11 @@ const updateBatch = async (req, res) => {
       return res.status(404).json({ message: "Batch not found" });
     }
 
-    // 🔹 Actualizar el estado del Batch
     await batch.update({ status }, { transaction });
 
-    // 🔹 Si hay envíos asociados, actualizar sus estados también
     if (batch.batchShipments && batch.batchShipments.length > 0) {
       await Shipment.update(
-        { status }, // ✅ Se aplica el mismo estado del Batch
+        { status },
         {
           where: { batchId: id },
           transaction,
@@ -113,13 +108,13 @@ const updateBatch = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { status } = req.body; // Extraer el nuevo estado
+    const { status } = req.body;
 
     const batch = await Batch.findByPk(id, {
       include: [
         {
           model: Shipment,
-          as: "batchShipments", // Alias correcto usado en la asociación
+          as: "batchShipments",
         },
       ],
       transaction,
@@ -129,13 +124,11 @@ const updateBatch = async (req, res) => {
       return res.status(404).json({ message: "Batch not found" });
     }
 
-    // 🔹 Actualizar el estado del Batch
     await batch.update({ status }, { transaction });
 
-    // 🔹 Si hay envíos asociados, actualizar sus estados también
     if (batch.batchShipments.length > 0) {
       await Shipment.update(
-        { status }, // 🔹 Se aplica el mismo estado del Batch
+        { status },
         {
           where: { batchId: id },
           transaction,
@@ -155,7 +148,6 @@ const updateBatch = async (req, res) => {
   }
 };
 
-// Eliminar un lote por su ID
 const deleteBatch = async (req, res) => {
   try {
     const { id } = req.params;

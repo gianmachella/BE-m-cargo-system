@@ -118,9 +118,10 @@ const createShipment = async (req, res) => {
       createdAt,
       updatedAt,
       insurance,
+      insuranceValue,
       paymentMethod,
-      declaredValue, // ✅ Usar los nombres correctos
-      valuePaid, // ✅ Usar los nombres correctos
+      declaredValue,
+      valuePaid,
     } = req.body;
 
     const newShipment = await Shipment.create(
@@ -139,9 +140,10 @@ const createShipment = async (req, res) => {
         createdAt,
         updatedAt,
         insurance,
+        insuranceValue,
         paymentMethod,
-        declaredValue, // ✅
-        valuePaid, // ✅
+        declaredValue,
+        valuePaid,
       },
       { transaction }
     );
@@ -161,12 +163,22 @@ const updateShipment = async (req, res) => {
     const {
       shipmentNumber,
       batchId,
+      clientId,
+      receiverId,
       boxes,
       totalWeight,
       totalVolume,
       totalBoxes,
       status,
+      createdBy,
       updatedBy,
+      createdAt,
+      updatedAt,
+      insurance,
+      insuranceValue,
+      paymentMethod,
+      declaredValue,
+      valuePaid,
     } = req.body;
 
     const shipment = await Shipment.findByPk(id);
@@ -175,12 +187,22 @@ const updateShipment = async (req, res) => {
 
     shipment.shipmentNumber = shipmentNumber;
     shipment.batchId = batchId;
+    shipment.clientId = clientId;
+    shipment.receiverId = receiverId;
     shipment.boxes = boxes;
     shipment.totalWeight = totalWeight;
     shipment.totalVolume = totalVolume;
     shipment.totalBoxes = totalBoxes;
     shipment.status = status;
+    shipment.createdBy = createdBy;
     shipment.updatedBy = updatedBy;
+    shipment.createdAt = createdAt;
+    shipment.updatedAt = updatedAt;
+    shipment.insurance = insurance;
+    shipment.insuranceValue = insuranceValue;
+    shipment.paymentMethod = paymentMethod;
+    shipment.declaredValue = declaredValue;
+    shipment.valuePaid = valuePaid;
 
     await shipment.save();
     res.json(shipment);
