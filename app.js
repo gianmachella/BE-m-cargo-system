@@ -12,7 +12,11 @@ const startServer = async () => {
 
     require("./models/associations");
 
+
     await sequelize.sync({ alter: true });
+    // Sincronizar base de datos (Solo usar alter: true en desarrollo)
+    await sequelize.sync({});
+(Guardando cambios locales antes de actualizar)
     console.log("✅ Database synchronized");
 
     const app = express();
@@ -37,7 +41,7 @@ const startServer = async () => {
           "Origin, X-Requested-With, Content-Type, Accept, Authorization",
       })
     );
-
+    
     app.use(express.json());
 
     const clientRoutes = require("./routes/clientRoutes");
@@ -58,7 +62,25 @@ const startServer = async () => {
 
     // Iniciar servidor
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    const HOST = "0.0.0.0";  // ⚠️ Asegura que Express escuche en IPv4
+
+app._router.stack.forEach((middleware) => {
+    if (middleware.route) { 
+        console.log(`📌 Ruta registrada: ${middleware.route.path}`);
+    }
+});
+
+app._router.stack.forEach((r) => {
+  if (r.route && r.route.path) {
+    console.log(`🛠 Ruta registrada: ${r.route.path}`);
+  }
+});
+
+
+app.listen(PORT, HOST, () => {
+    console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+});
+
   } catch (error) {
     console.error("❌ Error initializing server:", error.message);
     process.exit(1);

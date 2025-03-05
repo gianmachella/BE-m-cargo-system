@@ -7,6 +7,8 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const loginUser = async (req, res) => {
+console.log("📌 Se llamó a loginUser");
+
   try {
     const { email, password, company } = req.body;
 
