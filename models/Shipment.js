@@ -13,6 +13,7 @@ const Shipment = sequelize.define("Shipment", {
   totalBoxes: { type: DataTypes.INTEGER, allowNull: false },
   status: { type: DataTypes.STRING, allowNull: false },
   insurance: { type: DataTypes.STRING, allowNull: false },
+  insuranceValue: { type: DataTypes.STRING, allowNull: false },
   paymentMethod: { type: DataTypes.STRING, allowNull: false },
   declaredValue: { type: DataTypes.FLOAT, allowNull: false },
   valuePaid: { type: DataTypes.FLOAT, allowNull: false },

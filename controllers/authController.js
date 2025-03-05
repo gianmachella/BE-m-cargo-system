@@ -26,6 +26,8 @@ const loginUser = async (req, res) => {
       .createHash("sha256")
       .update(password)
       .digest("hex");
+    console.log("Pass Hash", hashedPassword);
+    console.log("Pass", user.password);
 
     if (hashedPassword !== user.password) {
       return res.status(401).json({ message: "Invalid password" });
