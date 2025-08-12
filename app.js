@@ -1,3 +1,5 @@
+// app.js (BE completo con CORS + preflight)
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -10,39 +12,43 @@ const startServer = async () => {
     await connectDB();
     console.log("✅ Database connected successfully");
 
+    // Asociaciones
     require("./models/associations");
 
-
+    // Sincronización (mantengo tu orden)
     await sequelize.sync({ alter: false });
-    // Sincronizar base de datos (Solo usar alter: true en desarrollo)
     await sequelize.sync({});
     console.log("✅ Database synchronized");
 
     const app = express();
 
+    // --- CORS ---
     const allowedOrigins = [
       "https://globalcontrol-system.com",
+      "https://www.globalcontrol-system.com",
       "http://localhost:3000",
     ];
 
-    app.use(
-      cors({
-        origin: function (origin, callback) {
-          if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-          } else {
-            callback(new Error("CORS no permitido"));
-          }
-        },
-        credentials: true,
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-        allowedHeaders:
-          "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-      })
-    );
-    
+    const corsOptions = {
+      origin(origin, cb) {
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        cb(new Error("CORS no permitido"));
+      },
+      credentials: true,
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+      allowedHeaders:
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    };
+
+    app.use(cors(corsOptions));
+    // Preflight para todas las rutas de API
+    app.options("/api/*", cors(corsOptions));
+    // --- fin CORS ---
+
+    // Body parser
     app.use(express.json());
 
+    // Rutas
     const clientRoutes = require("./routes/clientRoutes");
     const shipmentRoutes = require("./routes/shipmentRoutes");
     const batchRoutes = require("./routes/batchRoutes");
@@ -59,27 +65,25 @@ const startServer = async () => {
     app.use("/api/receivers", receiverRoutes);
     app.use("/api", emailRoutes);
 
-    // Iniciar servidor
     const PORT = process.env.PORT || 5000;
-    const HOST = "0.0.0.0";  // ⚠️ Asegura que Express escuche en IPv4
+    const HOST = "0.0.0.0";
 
-app._router.stack.forEach((middleware) => {
-    if (middleware.route) { 
+    // Log de rutas registradas
+    app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
         console.log(`📌 Ruta registrada: ${middleware.route.path}`);
-    }
-});
+      }
+    });
 
-app._router.stack.forEach((r) => {
-  if (r.route && r.route.path) {
-    console.log(`🛠 Ruta registrada: ${r.route.path}`);
-  }
-});
+    app._router.stack.forEach((r) => {
+      if (r.route && r.route.path) {
+        console.log(`🛠 Ruta registrada: ${r.route.path}`);
+      }
+    });
 
-
-app.listen(PORT, HOST, () => {
-    console.log(`🚀 Server running on http://${HOST}:${PORT}`);
-});
-
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+    });
   } catch (error) {
     console.error("❌ Error initializing server:", error.message);
     process.exit(1);
