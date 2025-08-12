@@ -25,15 +25,13 @@ const startServer = async () => {
     // --- CORS flexible por dominios ---
     const corsOptions = {
       origin(origin, cb) {
-        // Permitir herramientas sin Origin (curl, Postman, healthchecks)
-        if (!origin) return cb(null, true);
+        if (!origin) return cb(null, true); // Permite curl/Postman/healthchecks sin Origin
 
-        // Dominios permitidos (con/sin www, y subdominio api)
         const allowList = [
           /^https?:\/\/(www\.)?globalcontrol-system\.com$/i,
           /^https?:\/\/api\.globalcontrol-system\.com$/i,
-          /^http:\/\/localhost:\d+$/i, // dev local
-          /^http:\/\/127\.0\.0\.1:\d+$/i, // dev local
+          /^http:\/\/localhost:\d+$/i,
+          /^http:\/\/127\.0\.0\.1:\d+$/i,
         ];
 
         const ok = allowList.some((re) => re.test(origin));
@@ -54,7 +52,6 @@ const startServer = async () => {
       optionsSuccessStatus: 204,
     };
 
-    // Aplica CORS y responde preflight
     app.use(cors(corsOptions));
     app.options("*", cors(corsOptions));
 
