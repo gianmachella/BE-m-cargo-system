@@ -22,28 +22,41 @@ const startServer = async () => {
 
     const app = express();
 
-    // --- CORS ---
-    const allowedOrigins = [
-      "https://globalcontrol-system.com",
-      "https://www.globalcontrol-system.com",
-      "http://localhost:3000",
-    ];
-
+    // --- CORS flexible por dominios ---
     const corsOptions = {
       origin(origin, cb) {
-        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-        cb(new Error("CORS no permitido"));
+        // Permitir herramientas sin Origin (curl, Postman, healthchecks)
+        if (!origin) return cb(null, true);
+
+        // Dominios permitidos (con/sin www, y subdominio api)
+        const allowList = [
+          /^https?:\/\/(www\.)?globalcontrol-system\.com$/i,
+          /^https?:\/\/api\.globalcontrol-system\.com$/i,
+          /^http:\/\/localhost:\d+$/i, // dev local
+          /^http:\/\/127\.0\.0\.1:\d+$/i, // dev local
+        ];
+
+        const ok = allowList.some((re) => re.test(origin));
+        if (ok) return cb(null, true);
+
+        console.error("CORS bloqueado. Origin no permitida:", origin);
+        return cb(new Error("CORS no permitido"));
       },
       credentials: true,
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-      allowedHeaders:
-        "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+      methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+      allowedHeaders: [
+        "Origin",
+        "X-Requested-With",
+        "Content-Type",
+        "Accept",
+        "Authorization",
+      ],
+      optionsSuccessStatus: 204,
     };
 
+    // Aplica CORS y responde preflight
     app.use(cors(corsOptions));
-    // Preflight para todas las rutas de API
-    app.options("/api/*", cors(corsOptions));
-    // --- fin CORS ---
+    app.options("*", cors(corsOptions));
 
     // Body parser
     app.use(express.json());
