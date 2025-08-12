@@ -1,14 +1,18 @@
 const express = require("express");
+const router = express.Router();
 const {
   getShipments,
   createShipment,
   updateShipment,
   deleteShipment,
   getShipmentsByBatch,
+  getShipmentByNumber,
 } = require("../controllers/shipmentController");
 const { protect } = require("../middlewares/authMiddleware");
 const { validatePagination } = require("../middlewares/validatePagination");
-const router = express.Router();
+
+// público para tracking
+router.get("/number/:shipmentNumber", getShipmentByNumber);
 
 router
   .route("/")
@@ -16,12 +20,12 @@ router
   .post(protect, createShipment);
 
 router
+  .route("/batch/:batchId")
+  .get(protect, validatePagination, getShipmentsByBatch);
+
+router
   .route("/:id")
   .put(protect, updateShipment)
   .delete(protect, deleteShipment);
-
-router
-  .route("/batch/:batchId")
-  .get(protect, validatePagination, getShipmentsByBatch);
 
 module.exports = router;

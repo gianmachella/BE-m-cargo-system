@@ -1,8 +1,7 @@
 const Client = require("../models/Client");
 const Shipment = require("../models/Shipment");
 const Batch = require("../models/Batch");
-const Receiver = require("../models/Receiver"); // ✅ Asegúrate de importar Receiver
-
+const Receiver = require("../models/Receiver");
 const { sequelize } = require("../config/db");
 const { Op } = require("sequelize");
 
@@ -39,16 +38,8 @@ const getShipments = async (req, res) => {
           where: clientSearchCondition,
           required: false,
         },
-        {
-          model: Receiver,
-          as: "receiver",
-          required: false,
-        },
-        {
-          model: Batch,
-          as: "batch",
-          required: false,
-        },
+        { model: Receiver, as: "receiver", required: false },
+        { model: Batch, as: "batch", required: false },
       ],
     });
 
@@ -82,7 +73,7 @@ const getShipments = async (req, res) => {
         },
       ],
       limit: parseInt(limit),
-      offset: offset,
+      offset,
     });
 
     res.json({
@@ -99,10 +90,7 @@ const getShipments = async (req, res) => {
 
 const createShipment = async (req, res) => {
   const transaction = await sequelize.transaction();
-
   try {
-    console.log("📩 Request Body:", req.body);
-
     const {
       shipmentNumber,
       batchId,
@@ -217,7 +205,6 @@ const deleteShipment = async (req, res) => {
     const shipment = await Shipment.findByPk(id);
     if (!shipment)
       return res.status(404).json({ message: "Shipment not found" });
-
     await shipment.destroy();
     res.json({ message: "Shipment deleted" });
   } catch (error) {
@@ -229,14 +216,51 @@ const getShipmentsByBatch = async (req, res) => {
   try {
     const { batchId } = req.params;
     const batch = await Batch.findByPk(batchId, {
-      include: {
-        model: Shipment,
-        as: "shipments",
-      },
+      include: { model: Shipment, as: "shipments" },
     });
     if (!batch) return res.status(404).json({ message: "Batch not found" });
-
     res.json(batch.shipments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// NUEVO: GET por número
+const getShipmentByNumber = async (req, res) => {
+  try {
+    const { shipmentNumber } = req.params;
+    const shipment = await Shipment.findOne({
+      where: { shipmentNumber },
+      include: [
+        {
+          model: Client,
+          as: "client",
+          attributes: ["id", "firstName", "lastName", "phone", "email"],
+          required: false,
+        },
+        {
+          model: Receiver,
+          as: "receiver",
+          attributes: ["id", "firstName", "lastName", "phone", "address"],
+          required: false,
+        },
+        {
+          model: Batch,
+          as: "batch",
+          attributes: [
+            "id",
+            "batchNumber",
+            "destinationCountry",
+            "status",
+            "shipmentType",
+          ],
+          required: false,
+        },
+      ],
+    });
+    if (!shipment)
+      return res.status(404).json({ message: "Shipment not found" });
+    res.json(shipment);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -248,4 +272,5 @@ module.exports = {
   updateShipment,
   deleteShipment,
   getShipmentsByBatch,
+  getShipmentByNumber,
 };

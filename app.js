@@ -13,10 +13,9 @@ const startServer = async () => {
     require("./models/associations");
 
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     // Sincronizar base de datos (Solo usar alter: true en desarrollo)
     await sequelize.sync({});
-(Guardando cambios locales antes de actualizar)
     console.log("✅ Database synchronized");
 
     const app = express();
