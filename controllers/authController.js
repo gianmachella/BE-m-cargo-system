@@ -14,7 +14,7 @@ const isBcrypt = (hash) =>
 const loginUser = async (req, res) => {
   console.log("LOGIN ▶︎ inicio");
   try {
-    const { email, password, company } = req.body;
+    let { email, password, company } = req.body;
 
     if (!email || !password || !company) {
       return res
@@ -22,60 +22,34 @@ const loginUser = async (req, res) => {
         .json({ message: "Email, password, and company are required" });
     }
 
-    const user = await User.findOne({ where: { email, company } });
-    const isBcrypt = (h) =>
-      typeof h === "string" && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(h);
-    console.log(
-      "LOGIN ▶ hash almacenado:",
-      (user?.password || "").slice(0, 7),
-      "len:",
-      user?.password?.length
-    );
-    console.log("LOGIN ▶ isBcrypt?", isBcrypt(user?.password));
-    require("bcryptjs")
-      .compare("Dev2020!!", user.password)
-      .then((r) => console.log("LOGIN ▶ compare(Dev2020!!):", r))
-      .catch((e) => console.log("LOGIN ▶ compare error:", e?.message));
+    // Normalización mínima (evita fallas por mayúsculas/espacios)
+    email = String(email).trim().toLowerCase();
+    company = String(company).trim();
 
+    const user = await User.findOne({ where: { email, company } });
     if (!user) {
       console.log("LOGIN ▶︎ no existe usuario con ese email+company");
       return res.status(401).json({ message: "Invalid email or company" });
     }
 
-    console.log(
-      "LOGIN ▶︎ hash almacenado:",
-      (user.password || "").slice(0, 7),
-      "..."
-    );
-
     let ok = false;
-    console.log(
-      "LOGIN ▶︎ hash len:",
-      user.password?.length,
-      "isBcrypt?",
-      isBcrypt(user.password),
-      "prefix:",
-      (user.password || "").slice(0, 4)
-    );
 
     if (isBcrypt(user.password)) {
-      console.log("LOGIN ▶︎ usando bcrypt.compare");
+      // Bcrypt (actual)
       ok = await bcrypt.compare(password, user.password);
+      console.log("LOGIN ▶︎ bcrypt.compare:", ok);
+      if (!ok) return res.status(401).json({ message: "Invalid password" });
     } else {
-      console.log(
-        "LOGIN ▶︎ hash legacy sha256 detectado, comparando y migrando (si coincide)"
-      );
+      // Legacy SHA-256 → comparar y migrar si coincide
       const sha = crypto.createHash("sha256").update(password).digest("hex");
       ok = sha === user.password;
-      if (ok) {
-        const newHash = await bcrypt.hash(password, 10);
-        await user.update({ password: newHash });
-        console.log("LOGIN ▶︎ migrado sha256 → bcrypt para", email);
-      }
-    }
+      console.log("LOGIN ▶︎ sha256 legacy compare:", ok);
+      if (!ok) return res.status(401).json({ message: "Invalid password" });
 
-    console.log("LOGIN ▶︎ resultado compare:", ok);
-    if (!ok) return res.status(401).json({ message: "Invalid password" });
+      const newHash = await bcrypt.hash(password, 10);
+      await user.update({ password: newHash });
+      console.log("LOGIN ▶︎ migrado sha256 → bcrypt para", email);
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, company: user.company },
@@ -83,9 +57,10 @@ const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res
-      .status(200)
-      .json({ message: "User logged in successfully", token });
+    return res.status(200).json({
+      message: "User logged in successfully",
+      token,
+    });
   } catch (error) {
     console.error("LOGIN ▶︎ error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -97,7 +72,7 @@ const registerUser = async (req, res) => {
   try {
     console.log("📥 Datos recibidos en el backend:", req.body);
 
-    const {
+    let {
       firstName,
       lastName,
       userName,
@@ -122,6 +97,9 @@ const registerUser = async (req, res) => {
         .status(400)
         .json({ message: "Todos los campos son obligatorios." });
     }
+
+    email = String(email).trim().toLowerCase();
+    company = String(company).trim();
 
     const existingUser = await User.findOne({ where: { email, company } });
     if (existingUser) {
