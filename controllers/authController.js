@@ -7,7 +7,8 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Detecta si el hash es bcrypt ($2a/$2b/$2y)
-const isBcrypt = (hash = "") => /^\$2[aby]\$/.test(hash);
+const isBcrypt = (hash) =>
+  typeof hash === "string" && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(hash);
 
 // ====== LOGIN ======
 const loginUser = async (req, res) => {
