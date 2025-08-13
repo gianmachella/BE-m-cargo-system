@@ -10,46 +10,61 @@ const isBcrypt = (h) =>
 
 // ====== LOGIN ======
 const loginUser = async (req, res) => {
-  console.log("LOGIN ▶ v2 inicio");
   try {
-    let { email, password, company } = req.body;
-    if (!email || !password || !company) {
-      return res
-        .status(400)
-        .json({ message: "Email, password, and company are required" });
-    }
-    email = String(email).trim().toLowerCase();
-    company = String(company).trim();
+    console.log("📌 Se llamó a loginUser");
+    const { email, password, company } = req.body;
 
     const user = await User.findOne({ where: { email, company } });
-    if (!user)
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or company" });
-
-    if (isBcrypt(user.password)) {
-      const ok = await bcrypt.compare(password, user.password);
-      console.log("LOGIN ▶ bcrypt.compare:", ok);
-      if (!ok) return res.status(401).json({ message: "Invalid password" });
-    } else {
-      const sha = crypto.createHash("sha256").update(password).digest("hex");
-      const ok = sha === user.password;
-      console.log("LOGIN ▶ sha256 legacy compare:", ok);
-      if (!ok) return res.status(401).json({ message: "Invalid password" });
-      const newHash = await bcrypt.hash(password, 10);
-      await user.update({ password: newHash });
-      console.log("LOGIN ▶ migrado sha256 → bcrypt para", email);
     }
 
+    const storedPass = user.password;
+
+    let isMatch = false;
+
+    if (storedPass.startsWith("$2a$") || storedPass.startsWith("$2b$")) {
+      // Es bcrypt
+      console.log("🔑 Password en formato bcrypt");
+      isMatch = await bcrypt.compare(password, storedPass);
+    } else {
+      // Asumimos que es SHA256
+      console.log("🔑 Password en formato SHA256");
+      const sha256Hash = crypto
+        .createHash("sha256")
+        .update(password)
+        .digest("hex");
+      if (sha256Hash === storedPass) {
+        isMatch = true;
+        console.log("✅ Password SHA256 coincide, actualizando a bcrypt...");
+        const salt = await bcrypt.genSalt(10);
+        const newHashedPass = await bcrypt.hash(password, salt);
+        user.password = newHashedPass;
+        await user.save();
+        console.log("🔄 Password migrado a bcrypt");
+      }
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    // Generar token JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, company: user.company },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
-    return res
-      .status(200)
-      .json({ message: "User logged in successfully", token });
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      company: user.company,
+      token,
+    });
   } catch (error) {
-    console.error("LOGIN ▶ error:", error);
-    return res.status(500).json({ message: "Server error" });
+    console.error("❌ Error en loginUser:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
