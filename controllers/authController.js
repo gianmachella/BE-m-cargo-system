@@ -34,6 +34,15 @@ const loginUser = async (req, res) => {
     );
 
     let ok = false;
+    console.log(
+      "LOGIN ▶︎ hash len:",
+      user.password?.length,
+      "isBcrypt?",
+      isBcrypt(user.password),
+      "prefix:",
+      (user.password || "").slice(0, 4)
+    );
+
     if (isBcrypt(user.password)) {
       console.log("LOGIN ▶︎ usando bcrypt.compare");
       ok = await bcrypt.compare(password, user.password);
