@@ -22,22 +22,29 @@ const startServer = async () => {
 
     const app = express();
 
-    // --- CORS flexible por dominios ---
+    // --- CORS con allow-list explícita y logging ---
+    const ALLOWED_ORIGINS = new Set([
+      "https://globalcontrol-system.com",
+      "https://www.globalcontrol-system.com",
+      "https://api.globalcontrol-system.com",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ]);
+
     const corsOptions = {
       origin(origin, cb) {
-        if (!origin) return cb(null, true); // Permite curl/Postman/healthchecks sin Origin
+        // Permite curl/Postman/healthchecks sin Origin
+        if (!origin) {
+          console.log("[CORS] Sin Origin (ok)");
+          return cb(null, true);
+        }
 
-        const allowList = [
-          /^https?:\/\/(www\.)?globalcontrol-system\.com$/i,
-          /^https?:\/\/api\.globalcontrol-system\.com$/i,
-          /^http:\/\/localhost:\d+$/i,
-          /^http:\/\/127\.0\.0\.1:\d+$/i,
-        ];
+        if (ALLOWED_ORIGINS.has(origin)) {
+          console.log("[CORS] Permitido:", origin);
+          return cb(null, true);
+        }
 
-        const ok = allowList.some((re) => re.test(origin));
-        if (ok) return cb(null, true);
-
-        console.error("CORS bloqueado. Origin no permitida:", origin);
+        console.error("[CORS] BLOQUEADO. Origin no permitida:", origin);
         return cb(new Error("CORS no permitido"));
       },
       credentials: true,
@@ -51,9 +58,6 @@ const startServer = async () => {
       ],
       optionsSuccessStatus: 204,
     };
-
-    app.use(cors(corsOptions));
-    app.options("*", cors(corsOptions));
 
     // Body parser
     app.use(express.json());
