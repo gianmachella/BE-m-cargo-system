@@ -6,10 +6,10 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-// helper para detectar hashes bcrypt
-const isBcrypt = (hash) => /^\$2[aby]\$/.test(hash);
+// Detecta si el hash es bcrypt ($2a/$2b/$2y)
+const isBcrypt = (hash = "") => /^\$2[aby]\$/.test(hash);
 
-// ====== NUEVA FUNCIÓN loginUser ======
+// ====== LOGIN ======
 const loginUser = async (req, res) => {
   console.log("LOGIN ▶︎ inicio");
   try {
@@ -34,7 +34,7 @@ const loginUser = async (req, res) => {
     );
 
     let ok = false;
-    if (isBcrypt(user.password || "")) {
+    if (isBcrypt(user.password)) {
       console.log("LOGIN ▶︎ usando bcrypt.compare");
       ok = await bcrypt.compare(password, user.password);
     } else {
@@ -67,11 +67,11 @@ const loginUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-// ====== FIN NUEVA FUNCIÓN ======
 
+// ====== REGISTER ======
 const registerUser = async (req, res) => {
   try {
-    console.log("📥 Datos recibidos en el backend:", req.body); // 🔍 Depuración
+    console.log("📥 Datos recibidos en el backend:", req.body);
 
     const {
       firstName,
@@ -108,7 +108,7 @@ const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
+    await User.create({
       firstName,
       lastName,
       userName,
@@ -126,6 +126,7 @@ const registerUser = async (req, res) => {
   }
 };
 
+// ====== PROFILE ======
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
