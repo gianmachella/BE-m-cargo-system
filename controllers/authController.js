@@ -6,7 +6,12 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
+// helper para detectar hashes bcrypt
+const isBcrypt = (hash) => /^\$2[aby]\$/.test(hash);
+
+// ====== NUEVA FUNCIÓN loginUser ======
 const loginUser = async (req, res) => {
+  console.log("LOGIN ▶︎ inicio");
   try {
     const { email, password, company } = req.body;
 
@@ -18,30 +23,35 @@ const loginUser = async (req, res) => {
 
     const user = await User.findOne({ where: { email, company } });
     if (!user) {
+      console.log("LOGIN ▶︎ no existe usuario con ese email+company");
       return res.status(401).json({ message: "Invalid email or company" });
     }
 
-    let ok = false;
+    console.log(
+      "LOGIN ▶︎ hash almacenado:",
+      (user.password || "").slice(0, 7),
+      "..."
+    );
 
-    if (isBcrypt(user.password)) {
-      // ✅ Caso normal: comparar con bcrypt
+    let ok = false;
+    if (isBcrypt(user.password || "")) {
+      console.log("LOGIN ▶︎ usando bcrypt.compare");
       ok = await bcrypt.compare(password, user.password);
     } else {
-      // 🧯 Compatibilidad por si tienes usuarios viejos con sha256
+      console.log(
+        "LOGIN ▶︎ hash legacy sha256 detectado, comparando y migrando (si coincide)"
+      );
       const sha = crypto.createHash("sha256").update(password).digest("hex");
       ok = sha === user.password;
-
-      // Si coincide con sha256, migramos a bcrypt automáticamente
       if (ok) {
         const newHash = await bcrypt.hash(password, 10);
         await user.update({ password: newHash });
-        console.log("LOGIN ▶︎ Migrado sha256 → bcrypt para:", email);
+        console.log("LOGIN ▶︎ migrado sha256 → bcrypt para", email);
       }
     }
 
-    if (!ok) {
-      return res.status(401).json({ message: "Invalid password" });
-    }
+    console.log("LOGIN ▶︎ resultado compare:", ok);
+    if (!ok) return res.status(401).json({ message: "Invalid password" });
 
     const token = jwt.sign(
       { id: user.id, email: user.email, company: user.company },
@@ -49,15 +59,15 @@ const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res.status(200).json({
-      message: "User logged in successfully",
-      token,
-    });
+    return res
+      .status(200)
+      .json({ message: "User logged in successfully", token });
   } catch (error) {
     console.error("LOGIN ▶︎ error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
+// ====== FIN NUEVA FUNCIÓN ======
 
 const registerUser = async (req, res) => {
   try {
