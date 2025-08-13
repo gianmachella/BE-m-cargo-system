@@ -9,65 +9,35 @@ const isBcrypt = (h) =>
   typeof h === "string" && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(h);
 
 // ====== LOGIN ======
-const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
-    console.log("📌 Se llamó a loginUser");
     const { email, password, company } = req.body;
 
+    // Buscar usuario por email y company
     const user = await User.findOne({ where: { email, company } });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or company" });
     }
 
-    const storedPass = user.password;
-
-    let isMatch = false;
-
-    if (storedPass.startsWith("$2a$") || storedPass.startsWith("$2b$")) {
-      // Es bcrypt
-      console.log("🔑 Password en formato bcrypt");
-      isMatch = await bcrypt.compare(password, storedPass);
-    } else {
-      // Asumimos que es SHA256
-      console.log("🔑 Password en formato SHA256");
-      const sha256Hash = crypto
-        .createHash("sha256")
-        .update(password)
-        .digest("hex");
-      if (sha256Hash === storedPass) {
-        isMatch = true;
-        console.log("✅ Password SHA256 coincide, actualizando a bcrypt...");
-        const salt = await bcrypt.genSalt(10);
-        const newHashedPass = await bcrypt.hash(password, salt);
-        user.password = newHashedPass;
-        await user.save();
-        console.log("🔄 Password migrado a bcrypt");
-      }
-    }
-
+    // Comparar contraseña con bcrypt
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    // Generar token JWT
+    // Generar token
     const token = jwt.sign(
       { id: user.id, email: user.email, company: user.company },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "1d" }
     );
 
-    res.json({
-      id: user.id,
-      email: user.email,
-      company: user.company,
-      token,
-    });
-  } catch (error) {
-    console.error("❌ Error en loginUser:", error);
+    res.json({ token });
+  } catch (err) {
+    console.error("Error in loginUser:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // ====== REGISTER ======
 const registerUser = async (req, res) => {
   try {
