@@ -7,8 +7,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const loginUser = async (req, res) => {
-console.log("📌 Se llamó a loginUser");
-
   try {
     const { email, password, company } = req.body;
 
@@ -19,19 +17,29 @@ console.log("📌 Se llamó a loginUser");
     }
 
     const user = await User.findOne({ where: { email, company } });
-
     if (!user) {
       return res.status(401).json({ message: "Invalid email or company" });
     }
 
-    const hashedPassword = crypto
-      .createHash("sha256")
-      .update(password)
-      .digest("hex");
-    console.log("Pass Hash", hashedPassword);
-    console.log("Pass", user.password);
+    let ok = false;
 
-    if (hashedPassword !== user.password) {
+    if (isBcrypt(user.password)) {
+      // ✅ Caso normal: comparar con bcrypt
+      ok = await bcrypt.compare(password, user.password);
+    } else {
+      // 🧯 Compatibilidad por si tienes usuarios viejos con sha256
+      const sha = crypto.createHash("sha256").update(password).digest("hex");
+      ok = sha === user.password;
+
+      // Si coincide con sha256, migramos a bcrypt automáticamente
+      if (ok) {
+        const newHash = await bcrypt.hash(password, 10);
+        await user.update({ password: newHash });
+        console.log("LOGIN ▶︎ Migrado sha256 → bcrypt para:", email);
+      }
+    }
+
+    if (!ok) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
@@ -46,7 +54,8 @@ console.log("📌 Se llamó a loginUser");
       token,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("LOGIN ▶︎ error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
