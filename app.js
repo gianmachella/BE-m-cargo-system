@@ -66,7 +66,7 @@ const startServer = async () => {
     const clientRoutes = require("./routes/clientRoutes");
     const shipmentRoutes = require("./routes/shipmentRoutes");
     const batchRoutes = require("./routes/batchRoutes");
-    const userRoutes = require("./routes/userRoutes");
+    //const userRoutes = require("./routes/userRoutes");
     const authRoutes = require("./routes/authRoutes");
     const receiverRoutes = require("./routes/receiverRoutes");
     const emailRoutes = require("./routes/emailRoutes");
@@ -74,7 +74,7 @@ const startServer = async () => {
     app.use("/api/clients", clientRoutes);
     app.use("/api/shipments", shipmentRoutes);
     app.use("/api/batches", batchRoutes);
-    app.use("/api/users", userRoutes);
+    //app.use("/api/users", userRoutes);
     app.use("/api/auth", authRoutes);
     app.use("/api/receivers", receiverRoutes);
     app.use("/api", emailRoutes);
