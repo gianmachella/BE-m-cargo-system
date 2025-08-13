@@ -23,6 +23,20 @@ const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({ where: { email, company } });
+    const isBcrypt = (h) =>
+      typeof h === "string" && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(h);
+    console.log(
+      "LOGIN ▶ hash almacenado:",
+      (user?.password || "").slice(0, 7),
+      "len:",
+      user?.password?.length
+    );
+    console.log("LOGIN ▶ isBcrypt?", isBcrypt(user?.password));
+    require("bcryptjs")
+      .compare("Dev2020!!", user.password)
+      .then((r) => console.log("LOGIN ▶ compare(Dev2020!!):", r))
+      .catch((e) => console.log("LOGIN ▶ compare error:", e?.message));
+
     if (!user) {
       console.log("LOGIN ▶︎ no existe usuario con ese email+company");
       return res.status(401).json({ message: "Invalid email or company" });
