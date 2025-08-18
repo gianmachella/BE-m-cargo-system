@@ -7,6 +7,9 @@ const loginUser = async (req, res) => {
     const { email, password, company } = req.body;
 
     const user = await User.findOne({ where: { email, company } });
+    console.log("Usuario encontrado:", user);
+    console.log("Contraseña ingresada:", password);
+    console.log("Contraseña hasheada almacenada:", user.password);
     if (!user) {
       return res.status(401).json({ message: "Invalid email or company" });
     }
