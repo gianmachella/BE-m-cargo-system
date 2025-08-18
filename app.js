@@ -15,20 +15,14 @@ const startServer = async () => {
     // Asociaciones
     require("./models/associations");
 
-    // Sincronización (mantengo tu orden)
+    // Sincronización
     await sequelize.sync({ alter: false });
     await sequelize.sync({});
     console.log("✅ Database synchronized");
 
     const app = express();
 
-    // --- habilitar CORS con la whitelist ---
-    app.use(cors(corsOptions));
-
-    // Manejar preflight (OPTIONS)
-    app.options("*", cors(corsOptions));
-
-    // --- CORS con allow-list explícita y logging ---
+    // --- CORS allow-list ---
     const ALLOWED_ORIGINS = new Set([
       "https://globalcontrol-system.com",
       "https://www.globalcontrol-system.com",
@@ -39,17 +33,14 @@ const startServer = async () => {
 
     const corsOptions = {
       origin(origin, cb) {
-        // Permite curl/Postman/healthchecks sin Origin
         if (!origin) {
           console.log("[CORS] Sin Origin (ok)");
           return cb(null, true);
         }
-
         if (ALLOWED_ORIGINS.has(origin)) {
           console.log("[CORS] Permitido:", origin);
           return cb(null, true);
         }
-
         console.error("[CORS] BLOQUEADO. Origin no permitida:", origin);
         return cb(new Error("CORS no permitido"));
       },
@@ -65,6 +56,10 @@ const startServer = async () => {
       optionsSuccessStatus: 204,
     };
 
+    // --- habilitar CORS ---
+    app.use(cors(corsOptions));
+    app.options("*", cors(corsOptions)); // preflight
+
     // Body parser
     app.use(express.json());
 
@@ -72,7 +67,7 @@ const startServer = async () => {
     const clientRoutes = require("./routes/clientRoutes");
     const shipmentRoutes = require("./routes/shipmentRoutes");
     const batchRoutes = require("./routes/batchRoutes");
-    //const userRoutes = require("./routes/userRoutes");
+    // const userRoutes = require("./routes/userRoutes");
     const authRoutes = require("./routes/authRoutes");
     const receiverRoutes = require("./routes/receiverRoutes");
     const emailRoutes = require("./routes/emailRoutes");
@@ -80,7 +75,7 @@ const startServer = async () => {
     app.use("/api/clients", clientRoutes);
     app.use("/api/shipments", shipmentRoutes);
     app.use("/api/batches", batchRoutes);
-    //app.use("/api/users", userRoutes);
+    // app.use("/api/users", userRoutes);
     app.use("/api/auth", authRoutes);
     app.use("/api/receivers", receiverRoutes);
     app.use("/api", emailRoutes);
@@ -92,12 +87,6 @@ const startServer = async () => {
     app._router.stack.forEach((middleware) => {
       if (middleware.route) {
         console.log(`📌 Ruta registrada: ${middleware.route.path}`);
-      }
-    });
-
-    app._router.stack.forEach((r) => {
-      if (r.route && r.route.path) {
-        console.log(`🛠 Ruta registrada: ${r.route.path}`);
       }
     });
 
