@@ -11,9 +11,6 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or company" });
     }
 
-    console.log("Login payload:", { email, password, company });
-    console.log("User from DB:", user.email, user.company, user.password);
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
@@ -25,9 +22,9 @@ const loginUser = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.json({ token });
+    return res.json({ token });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
