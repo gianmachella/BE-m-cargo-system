@@ -18,8 +18,9 @@ const User = require("../models/User");
     });
 
     console.log("✅ Admin creado:", admin.toJSON());
-    await sequelize.close();
-  } catch (err) {
-    console.error("❌ Error creando admin:", err);
+  } catch (error) {
+    console.error("❌ Error creando admin:", error);
+  } finally {
+    await sequelize.close(); // 👈 ahora sí definido
   }
 })();
