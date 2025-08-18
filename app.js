@@ -22,6 +22,12 @@ const startServer = async () => {
 
     const app = express();
 
+    // --- habilitar CORS con la whitelist ---
+    app.use(cors(corsOptions));
+
+    // Manejar preflight (OPTIONS)
+    app.options("*", cors(corsOptions));
+
     // --- CORS con allow-list explícita y logging ---
     const ALLOWED_ORIGINS = new Set([
       "https://globalcontrol-system.com",
