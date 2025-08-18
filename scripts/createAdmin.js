@@ -13,8 +13,8 @@ const User = require("../models/User");
       email: "admin@globalcontrol-system.com",
       password: hashedPassword,
       company: "global-cargo",
-      createdBy: "system",
-      updatedBy: "system",
+      createdBy: 0,
+      updatedBy: 0,
     });
 
     console.log("✅ Admin creado:", admin.toJSON());
