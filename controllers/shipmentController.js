@@ -101,10 +101,6 @@ const createShipment = async (req, res) => {
       totalVolume,
       totalBoxes,
       status,
-      createdBy,
-      updatedBy,
-      createdAt,
-      updatedAt,
       insurance,
       insuranceValue,
       paymentMethod,
@@ -123,10 +119,8 @@ const createShipment = async (req, res) => {
         totalVolume,
         totalBoxes,
         status,
-        createdBy,
-        updatedBy,
-        createdAt,
-        updatedAt,
+        createdBy: req.user.id,
+        updatedBy: req.user.id,
         insurance,
         insuranceValue,
         paymentMethod,
@@ -146,8 +140,17 @@ const createShipment = async (req, res) => {
 };
 
 const updateShipment = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const { id } = req.params;
+
+    const shipment = await Shipment.findByPk(id);
+    if (!shipment) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    // Todos los campos que SÍ pueden venir del body
     const {
       shipmentNumber,
       batchId,
@@ -158,10 +161,6 @@ const updateShipment = async (req, res) => {
       totalVolume,
       totalBoxes,
       status,
-      createdBy,
-      updatedBy,
-      createdAt,
-      updatedAt,
       insurance,
       insuranceValue,
       paymentMethod,
@@ -169,32 +168,32 @@ const updateShipment = async (req, res) => {
       valuePaid,
     } = req.body;
 
-    const shipment = await Shipment.findByPk(id);
-    if (!shipment)
-      return res.status(404).json({ message: "Shipment not found" });
+    await shipment.update(
+      {
+        shipmentNumber,
+        batchId,
+        clientId,
+        receiverId,
+        boxes,
+        totalWeight,
+        totalVolume,
+        totalBoxes,
+        status,
+        updatedBy: req.user.id, // 👈 tomado del token
+        insurance,
+        insuranceValue,
+        paymentMethod,
+        declaredValue,
+        valuePaid,
+      },
+      { transaction }
+    );
 
-    shipment.shipmentNumber = shipmentNumber;
-    shipment.batchId = batchId;
-    shipment.clientId = clientId;
-    shipment.receiverId = receiverId;
-    shipment.boxes = boxes;
-    shipment.totalWeight = totalWeight;
-    shipment.totalVolume = totalVolume;
-    shipment.totalBoxes = totalBoxes;
-    shipment.status = status;
-    shipment.createdBy = createdBy;
-    shipment.updatedBy = updatedBy;
-    shipment.createdAt = createdAt;
-    shipment.updatedAt = updatedAt;
-    shipment.insurance = insurance;
-    shipment.insuranceValue = insuranceValue;
-    shipment.paymentMethod = paymentMethod;
-    shipment.declaredValue = declaredValue;
-    shipment.valuePaid = valuePaid;
-
-    await shipment.save();
-    res.json(shipment);
+    await transaction.commit();
+    res.status(200).json(shipment);
   } catch (error) {
+    await transaction.rollback();
+    console.error("❌ Error al actualizar envío:", error);
     res.status(500).json({ message: error.message });
   }
 };
