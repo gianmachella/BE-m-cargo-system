@@ -17,7 +17,6 @@ const startServer = async () => {
 
     // Sincronización
     await sequelize.sync({ alter: false });
-    await sequelize.sync({});
     console.log("✅ Database synchronized");
 
     const app = express();
@@ -32,6 +31,7 @@ const startServer = async () => {
       "http://localhost:3001",
       "http://127.0.0.1:3001",
       "https://www.globalcargous.com",
+      "https://globalcargous.com",
     ]);
 
     const corsOptions = {
