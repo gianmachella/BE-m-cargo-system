@@ -10,7 +10,10 @@ const { protect } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
+router.use(protect);
+
 router.route("/").get(getBatches).post(createBatch);
+
 router.route("/:id").get(getBatchById).put(updateBatch).delete(deleteBatch);
 
 module.exports = router;

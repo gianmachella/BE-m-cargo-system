@@ -40,9 +40,14 @@ const getBatches = async (req, res) => {
 
 const createBatch = async (req, res) => {
   try {
-    const newBatch = await Batch.create(req.body);
+    const newBatch = await Batch.create({
+      ...req.body,
+      createdBy: req.user.id,
+      updatedBy: req.user.id,
+    });
     res.status(201).json(newBatch);
   } catch (error) {
+    console.error("❌ Error creando batch:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -70,12 +75,7 @@ const updateBatch = async (req, res) => {
     const { status } = req.body;
 
     const batch = await Batch.findByPk(id, {
-      include: [
-        {
-          model: Shipment,
-          as: "batchShipments",
-        },
-      ],
+      include: [{ model: Shipment, as: "batchShipments" }],
       transaction,
     });
 
@@ -88,51 +88,7 @@ const updateBatch = async (req, res) => {
     if (batch.batchShipments && batch.batchShipments.length > 0) {
       await Shipment.update(
         { status },
-        {
-          where: { batchId: id },
-          transaction,
-        }
-      );
-    }
-
-    await transaction.commit();
-    res.json({
-      message: "Batch and associated shipments updated successfully",
-      batch,
-    });
-  } catch (error) {
-    await transaction.rollback();
-    console.error("❌ Error updating batch and shipments:", error);
-    res.status(500).json({ message: error.message });
-  }
-
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const batch = await Batch.findByPk(id, {
-      include: [
-        {
-          model: Shipment,
-          as: "batchShipments",
-        },
-      ],
-      transaction,
-    });
-
-    if (!batch) {
-      return res.status(404).json({ message: "Batch not found" });
-    }
-
-    await batch.update({ status }, { transaction });
-
-    if (batch.batchShipments.length > 0) {
-      await Shipment.update(
-        { status },
-        {
-          where: { batchId: id },
-          transaction,
-        }
+        { where: { batchId: id }, transaction }
       );
     }
 
