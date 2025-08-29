@@ -25,7 +25,6 @@ const startServer = async () => {
     const ALLOWED_ORIGINS = new Set([
       "https://globalcontrol-system.com",
       "https://www.globalcontrol-system.com",
-      "https://api.globalcontrol-system.com",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:3001",
@@ -36,15 +35,10 @@ const startServer = async () => {
 
     const corsOptions = {
       origin(origin, cb) {
-        if (!origin) {
-          console.log("[CORS] Sin Origin (ok)");
-          return cb(null, true);
-        }
-        if (ALLOWED_ORIGINS.has(origin)) {
-          console.log("[CORS] Permitido:", origin);
-          return cb(null, true);
-        }
-        console.error("[CORS] BLOQUEADO. Origin no permitida:", origin);
+        console.log("[CORS CHECK]", origin);
+        if (!origin) return cb(null, true);
+        if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+        console.error("[CORS] BLOQUEADO:", origin);
         return cb(new Error("CORS no permitido"));
       },
       credentials: true,
