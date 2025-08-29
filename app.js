@@ -17,6 +17,7 @@ const startServer = async () => {
 
     // Sincronización
     await sequelize.sync({ alter: false });
+    await sequelize.sync({});
     console.log("✅ Database synchronized");
 
     const app = express();
@@ -25,6 +26,7 @@ const startServer = async () => {
     const ALLOWED_ORIGINS = new Set([
       "https://globalcontrol-system.com",
       "https://www.globalcontrol-system.com",
+      "https://api.globalcontrol-system.com",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:3001",
@@ -35,10 +37,15 @@ const startServer = async () => {
 
     const corsOptions = {
       origin(origin, cb) {
-        console.log("[CORS CHECK]", origin);
-        if (!origin) return cb(null, true);
-        if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
-        console.error("[CORS] BLOQUEADO:", origin);
+        if (!origin) {
+          console.log("[CORS] Sin Origin (ok)");
+          return cb(null, true);
+        }
+        if (ALLOWED_ORIGINS.has(origin)) {
+          console.log("[CORS] Permitido:", origin);
+          return cb(null, true);
+        }
+        console.error("[CORS] BLOQUEADO. Origin no permitida:", origin);
         return cb(new Error("CORS no permitido"));
       },
       credentials: true,
@@ -61,12 +68,21 @@ const startServer = async () => {
     app.use(express.json());
 
     // Rutas
-    app.use("/api/clients", require("./routes/clientRoutes"));
-    app.use("/api/shipments", require("./routes/shipmentRoutes"));
-    app.use("/api/batches", require("./routes/batchRoutes"));
-    app.use("/api/auth", require("./routes/authRoutes"));
-    app.use("/api/receivers", require("./routes/receptorRoutes"));
-    app.use("/api", require("./routes/emailRoutes"));
+    const clientRoutes = require("./routes/clientRoutes");
+    const shipmentRoutes = require("./routes/shipmentRoutes");
+    const batchRoutes = require("./routes/batchRoutes");
+    // const userRoutes = require("./routes/userRoutes");
+    const authRoutes = require("./routes/authRoutes");
+    const receiverRoutes = require("./routes/receiverRoutes");
+    const emailRoutes = require("./routes/emailRoutes");
+
+    app.use("/api/clients", clientRoutes);
+    app.use("/api/shipments", shipmentRoutes);
+    app.use("/api/batches", batchRoutes);
+    // app.use("/api/users", userRoutes);
+    app.use("/api/auth", authRoutes);
+    app.use("/api/receivers", receiverRoutes);
+    app.use("/api", emailRoutes);
 
     const PORT = process.env.PORT || 5000;
     const HOST = "0.0.0.0";
