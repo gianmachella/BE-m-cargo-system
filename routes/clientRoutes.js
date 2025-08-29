@@ -10,19 +10,26 @@ const {
 const {
   getReceptorsByClientId,
   updateReceiver,
-} = require("../controllers/receptorController"); // Asegúrate de que el path sea correcto
+} = require("../controllers/receptorController");
 const { protect } = require("../middlewares/authMiddleware");
-const { validatePagination } = require("../middlewares/validatePagination"); // Asegúrate de que esta importación sea correcta
+const { validatePagination } = require("../middlewares/validatePagination");
 
 const router = express.Router();
 
-router.get("/", getClients); // Obtener todos los clientes
-router.get("/:id", getClientById); // Obtener un cliente por ID
-router.post("/", createClient); // Crear un nuevo cliente
-router.put("/:id", updateClient); // Actualizar cliente
-router.delete("/:id", deleteClient); // Eliminar cliente
-router.get("/:clientId/receivers", getReceptorsByClientId);
+router
+  .route("/")
+  .get(protect, validatePagination, getClients)
+  .post(protect, createClient);
 
-router.put("/receivers/:id", updateReceiver);
+router
+  .route("/:id")
+  .get(protect, getClientById)
+  .put(protect, updateClient)
+  .delete(protect, deleteClient);
+
+router.get("/:clientId/receivers", protect, getReceptorsByClientId);
+router.put("/receivers/:id", protect, updateReceiver);
+
+router.get("/:id/shipments", protect, getShipmentsByClient);
 
 module.exports = router;

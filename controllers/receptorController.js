@@ -1,11 +1,11 @@
 const Receiver = require("../models/Receiver");
+
+// Obtener receptores por cliente
 const getReceptorsByClientId = async (req, res) => {
   const { clientId } = req.params;
 
   try {
-    const receivers = await Receiver.findAll({
-      where: { clientId },
-    });
+    const receivers = await Receiver.findAll({ where: { clientId } });
 
     if (receivers.length === 0) {
       return res
@@ -15,26 +15,27 @@ const getReceptorsByClientId = async (req, res) => {
 
     return res.status(200).json(receivers);
   } catch (error) {
-    console.error("Error al obtener los receptores:", error);
+    console.error("❌ Error al obtener los receptores:", error);
     return res
       .status(500)
       .json({ message: "Error al obtener los receptores." });
   }
 };
 
+// Crear receptor
 const createReceiver = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    phone,
-    address,
-    city,
-    state,
-    country,
-    clientId,
-  } = req.body;
-
   try {
+    const {
+      firstName,
+      lastName,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      clientId,
+    } = req.body;
+
     if (
       !firstName ||
       !lastName ||
@@ -57,15 +58,18 @@ const createReceiver = async (req, res) => {
       state,
       country,
       clientId,
+      createdBy: req.user?.id || null,
+      updatedBy: req.user?.id || null,
     });
 
     return res.status(201).json(newReceiver);
   } catch (error) {
-    console.error("Error al crear el receptor:", error);
+    console.error("❌ Error al crear receptor:", error);
     return res.status(500).json({ message: "Error al crear el receptor." });
   }
 };
 
+// Actualizar receptor
 const updateReceiver = async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,19 +81,20 @@ const updateReceiver = async (req, res) => {
       return res.status(404).json({ message: "Receptor no encontrado" });
     }
 
-    receiver.firstName = firstName;
-    receiver.lastName = lastName;
-    receiver.phone = phone;
-    receiver.address = address;
-    receiver.city = city;
-    receiver.state = state;
-    receiver.country = country;
-
-    await receiver.save();
+    await receiver.update({
+      firstName,
+      lastName,
+      phone,
+      address,
+      city,
+      state,
+      country,
+      updatedBy: req.user?.id || receiver.updatedBy,
+    });
 
     return res.status(200).json({ message: "Receptor actualizado", receiver });
   } catch (error) {
-    console.error("Error al actualizar receptor:", error);
+    console.error("❌ Error al actualizar receptor:", error);
     return res.status(500).json({ message: "Error al actualizar receptor" });
   }
 };
