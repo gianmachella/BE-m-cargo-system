@@ -119,8 +119,8 @@ const createShipment = async (req, res) => {
         totalVolume,
         totalBoxes,
         status,
-        createdBy: req.user.id,
-        updatedBy: req.user.id,
+        createdBy: req.user.id, // 👈 siempre del token
+        updatedBy: req.user.id, // 👈 siempre del token
         insurance,
         insuranceValue,
         paymentMethod,
@@ -150,7 +150,6 @@ const updateShipment = async (req, res) => {
       return res.status(404).json({ message: "Shipment not found" });
     }
 
-    // Todos los campos que SÍ pueden venir del body
     const {
       shipmentNumber,
       batchId,
@@ -179,7 +178,7 @@ const updateShipment = async (req, res) => {
         totalVolume,
         totalBoxes,
         status,
-        updatedBy: req.user.id, // 👈 tomado del token
+        updatedBy: req.user.id, // 👈 token
         insurance,
         insuranceValue,
         paymentMethod,
@@ -224,7 +223,6 @@ const getShipmentsByBatch = async (req, res) => {
   }
 };
 
-// NUEVO: GET por número
 const getShipmentByNumber = async (req, res) => {
   try {
     const { shipmentNumber } = req.params;
