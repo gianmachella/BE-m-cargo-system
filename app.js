@@ -1,4 +1,4 @@
-// app.js (Backend principal con CORS + preflight)
+// app.js (BE completo con CORS + preflight)
 
 const express = require("express");
 const cors = require("cors");
@@ -9,14 +9,13 @@ dotenv.config();
 
 const startServer = async () => {
   try {
-    // 🔌 Conexión DB
     await connectDB();
     console.log("✅ Database connected successfully");
 
-    // Asociaciones de modelos
+    // Asociaciones
     require("./models/associations");
 
-    // 🔄 Sincronización
+    // Sincronización
     await sequelize.sync({ alter: false });
     console.log("✅ Database synchronized");
 
@@ -67,7 +66,7 @@ const startServer = async () => {
     // Body parser
     app.use(express.json());
 
-    // --- Rutas ---
+    // Rutas
     app.use("/api/clients", require("./routes/clientRoutes"));
     app.use("/api/shipments", require("./routes/shipmentRoutes"));
     app.use("/api/batches", require("./routes/batchRoutes"));
