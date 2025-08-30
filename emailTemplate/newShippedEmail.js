@@ -5,7 +5,7 @@ const newShippedEmail = (data, clientData, receiverData) => {
     <!-- Header -->
     <tr>
       <td style="background-color: #bd1c2c; padding: 20px; text-align: center; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-        <img src="https://globalcargous.com/images/Logo-GC-white.png" alt="Global Cargo Logo" width="400" style="display: block; margin: auto;">
+        <img src="https://www.globalcargous.com/static/media/logo-white.e5c6c230c0da7f8b082c.png" alt="Global Cargo Logo" width="400" style="display: block; margin: auto;">
       </td>
     </tr>
 
@@ -25,7 +25,7 @@ const newShippedEmail = (data, clientData, receiverData) => {
             <td><strong>Número de Envío:</strong></td><td>${
               data.shipmentNumber
             }</td>
-            <td><strong>Fecha:</strong></td><td>${data.createdAt}</td>
+            <td><strong>Fecha:</strong></td><td>${data.date}</td>
           </tr>
           <tr>
             <td><strong>Nombre Remitente:</strong></td><td>${
@@ -72,7 +72,9 @@ const newShippedEmail = (data, clientData, receiverData) => {
             <td><strong>Total de Pies Cuadrados:</strong></td><td>${
               data.totalVolume
             } ft²</td>
-            <td><strong>Asegurado:</strong></td><td>${data.insured}</td>
+            <td><strong>Asegurado:</strong></td><td>${
+              data.insuranceValue ? data.insuranceValue : "0"
+            }</td>
           </tr>
           <tr>
             <td><strong>Valor Declarado:</strong></td><td>${
