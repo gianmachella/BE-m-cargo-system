@@ -83,9 +83,11 @@ const updateBatch = async (req, res) => {
       return res.status(404).json({ message: "Batch not found" });
     }
 
+    // 🔹 Actualizar el lote
     await batch.update({ status }, { transaction });
 
-    if (batch.batchShipments && batch.batchShipments.length > 0) {
+    // 🔹 Actualizar todos los envíos asociados
+    if (batch.batchShipments?.length > 0) {
       await Shipment.update(
         { status },
         { where: { batchId: id }, transaction }
@@ -93,9 +95,15 @@ const updateBatch = async (req, res) => {
     }
 
     await transaction.commit();
+
+    // 🔹 Traer de nuevo los datos actualizados para mandarlos al frontend
+    const updatedBatch = await Batch.findByPk(id, {
+      include: [{ model: Shipment, as: "batchShipments" }],
+    });
+
     res.json({
-      message: "Batch and associated shipments updated successfully",
-      batch,
+      message: "✅ Batch y envíos asociados actualizados con éxito",
+      batch: updatedBatch,
     });
   } catch (error) {
     await transaction.rollback();
